@@ -1,130 +1,114 @@
 import { useState, useEffect, useCallback } from 'react'
-import Header from './components/Header'
-import Hero from './components/Hero'
-import CategoryNav from './components/CategoryNav'
-import MenuSection from './components/MenuSection'
-import Cart from './components/Cart'
+import TopBar      from './components/TopBar'
+import Header      from './components/Header'
+import Hero        from './components/Hero'
+import InfoBanner  from './components/InfoBanner'
+import TopPicks    from './components/TopPicks'
+import CategoryGrid from './components/CategoryGrid'
+import MenuFull    from './components/MenuFull'
+import InfoSection from './components/InfoSection'
+import SiteFooter  from './components/SiteFooter'
+import CartPanel   from './components/CartPanel'
 import CheckoutModal from './components/CheckoutModal'
-import Footer from './components/Footer'
 import { categories, menuData } from './data/menu'
 import './App.css'
 
 export default function App() {
-  const [cartItems, setCartItems] = useState([])
-  const [cartOpen, setCartOpen] = useState(false)
+  const [cart, setCart]             = useState([])
+  const [cartOpen, setCartOpen]     = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [activeCategory, setActiveCategory] = useState('menu-combinati')
-  const [orderSuccess, setOrderSuccess] = useState(false)
+  const [successMsg, setSuccessMsg] = useState(false)
+  const [activeMenu, setActiveMenu] = useState(null) // scroll target
 
-  // Lock body scroll when cart is open
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0)
+  const cartTotal = cart.reduce((s, i) => s + i.price * i.qty, 0)
+
   useEffect(() => {
-    if (cartOpen || checkoutOpen) {
-      document.body.classList.add('cart-open')
-    } else {
-      document.body.classList.remove('cart-open')
-    }
+    document.body.classList.toggle('no-scroll', cartOpen || checkoutOpen)
   }, [cartOpen, checkoutOpen])
 
-  const cartCount = cartItems.reduce((sum, item) => sum + item.qty, 0)
-  const cartTotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0)
-
   const addToCart = useCallback((item) => {
-    setCartItems(prev => {
-      const existing = prev.find(i => i.id === item.id)
-      if (existing) {
-        return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
-      }
-      return [...prev, { ...item, qty: 1 }]
+    setCart(prev => {
+      const found = prev.find(i => i.id === item.id)
+      return found
+        ? prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i)
+        : [...prev, { ...item, qty: 1 }]
     })
   }, [])
 
-  const removeFromCart = useCallback((itemId) => {
-    setCartItems(prev => prev.filter(i => i.id !== itemId))
+  const updateQty = useCallback((id, delta) => {
+    setCart(prev => prev.map(i => i.id === id ? { ...i, qty: i.qty + delta } : i).filter(i => i.qty > 0))
   }, [])
 
-  const updateQty = useCallback((itemId, delta) => {
-    setCartItems(prev => {
-      return prev
-        .map(i => i.id === itemId ? { ...i, qty: i.qty + delta } : i)
-        .filter(i => i.qty > 0)
-    })
-  }, [])
-
-  const clearCart = useCallback(() => {
-    setCartItems([])
+  const removeItem = useCallback((id) => {
+    setCart(prev => prev.filter(i => i.id !== id))
   }, [])
 
   const handleCheckout = () => {
     setCartOpen(false)
-    setTimeout(() => setCheckoutOpen(true), 300)
+    setTimeout(() => setCheckoutOpen(true), 320)
   }
 
   const handleOrderComplete = () => {
     setCheckoutOpen(false)
-    clearCart()
-    setOrderSuccess(true)
-    setTimeout(() => setOrderSuccess(false), 6000)
+    setCart([])
+    setSuccessMsg(true)
+    setTimeout(() => setSuccessMsg(false), 6000)
+  }
+
+  const scrollToMenu = (catId) => {
+    const el = document.getElementById(catId ? `menu-cat-${catId}` : 'menu-full')
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   return (
-    <div className="page">
-      <Header
-        cartCount={cartCount}
-        onCartOpen={() => setCartOpen(true)}
-      />
+    <>
+      <TopBar />
+      <Header cartCount={cartCount} onCartOpen={() => setCartOpen(true)} />
 
-      <Hero onOrderNow={() => {
-        const el = document.getElementById('menu-section')
-        el?.scrollIntoView({ behavior: 'smooth' })
-      }} />
-
-      <main id="menu-section">
-        <CategoryNav
+      <main>
+        <Hero onOrder={() => scrollToMenu(null)} />
+        <InfoBanner />
+        <TopPicks onAdd={addToCart} cart={cart} />
+        <CategoryGrid onCategory={scrollToMenu} />
+        <MenuFull
           categories={categories}
-          active={activeCategory}
-          onChange={setActiveCategory}
+          menuData={menuData}
+          cart={cart}
+          onAdd={addToCart}
         />
-        {categories.map(cat => (
-          <MenuSection
-            key={cat.id}
-            category={cat}
-            data={menuData[cat.id]}
-            isActive={activeCategory === cat.id}
-            onAddToCart={addToCart}
-            cartItems={cartItems}
-          />
-        ))}
+        <InfoSection />
       </main>
 
-      <Footer />
+      <SiteFooter />
 
-      <Cart
+      <CartPanel
         open={cartOpen}
-        items={cartItems}
+        items={cart}
         total={cartTotal}
         onClose={() => setCartOpen(false)}
         onUpdate={updateQty}
-        onRemove={removeFromCart}
+        onRemove={removeItem}
         onCheckout={handleCheckout}
       />
 
       <CheckoutModal
         open={checkoutOpen}
-        items={cartItems}
+        items={cart}
         total={cartTotal}
         onClose={() => setCheckoutOpen(false)}
         onComplete={handleOrderComplete}
       />
 
-      {orderSuccess && (
-        <div className="success-toast" role="alert">
-          <span className="success-toast__icon">✅</span>
+      {successMsg && (
+        <div className="toast-success" role="alert">
+          <span>✅</span>
           <div>
-            <strong>Ordine inviato!</strong>
-            <p>Ti contatteremo presto per confermare il ritiro.</p>
+            <strong>Ordine inviato su WhatsApp!</strong>
+            <p>Ti contatteremo per confermare il ritiro.</p>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }

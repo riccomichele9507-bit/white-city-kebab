@@ -1,0 +1,53 @@
+.topbar {
+  background: var(--bg-dark);
+  color: var(--text-4);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.topbar__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topbar__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #B0A090;
+  transition: color var(--transition);
+}
+
+.topbar__item--phone {
+  color: var(--accent-light);
+}
+
+.topbar__item--phone:hover {
+  color: #fff;
+}
+
+.topbar__item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.topbar__sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .topbar__inner {
+    padding: 7px 16px;
+    gap: 8px;
+  }
+  .topbar__sep { display: none; }
+  .topbar__item:nth-child(3) { display: none; }
+}
