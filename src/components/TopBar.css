@@ -23,12 +23,9 @@
   transition: color var(--transition);
 }
 
-.topbar__item--phone {
-  color: var(--accent-light);
-}
-
-.topbar__item--phone:hover {
-  color: #fff;
+.topbar__item--highlight {
+  color: #C8B8A0;
+  font-weight: 600;
 }
 
 .topbar__item svg {

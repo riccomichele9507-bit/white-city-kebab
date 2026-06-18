@@ -1,15 +1,31 @@
 import { useState, useEffect, useRef } from 'react'
 import './CheckoutModal.css'
 
-const WA_NUMBER = '393200000000'
+const DELIVERY_FEE = 2.50
+
+function generateOrderId() {
+  return 'WCK-' + Date.now().toString(36).toUpperCase().slice(-6)
+}
 
 export default function CheckoutModal({ open, items, total, onClose, onComplete }) {
-  const [form, setForm]       = useState({ name: '', phone: '', time: '', notes: '' })
+  const [step, setStep]       = useState(1) // 1=options, 2=info, 3=success
+  const [mode, setMode]       = useState('asporto')    // 'asporto' | 'consegna'
+  const [payment, setPayment] = useState('contanti')   // 'online' | 'contanti'
+  const [form, setForm]       = useState({ name: '', phone: '', email: '', address: '', city: '', notes: '' })
   const [errors, setErrors]   = useState({})
-  const [busy, setBusy]       = useState(false)
+  const [orderId, setOrderId] = useState('')
   const firstRef              = useRef(null)
 
-  useEffect(() => { if (open) setTimeout(() => firstRef.current?.focus(), 300) }, [open])
+  const orderTotal = mode === 'consegna' ? total + DELIVERY_FEE : total
+
+  useEffect(() => {
+    if (!open) { setTimeout(() => { setStep(1); setErrors({}) }, 400) }
+  }, [open])
+
+  useEffect(() => {
+    if (open && step === 2) setTimeout(() => firstRef.current?.focus(), 100)
+  }, [open, step])
+
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape' && open) onClose() }
     window.addEventListener('keydown', fn)
@@ -18,9 +34,16 @@ export default function CheckoutModal({ open, items, total, onClose, onComplete 
 
   const validate = () => {
     const e = {}
-    if (!form.name.trim())  e.name  = 'Nome obbligatorio'
-    if (!form.phone.trim()) e.phone = 'Telefono obbligatorio'
+    if (!form.name.trim())  e.name  = 'Campo obbligatorio'
+    if (!form.phone.trim()) e.phone = 'Campo obbligatorio'
     else if (!/^[\d\s+\-()]{6,}$/.test(form.phone)) e.phone = 'Numero non valido'
+    if (mode === 'consegna') {
+      if (!form.address.trim()) e.address = 'Indirizzo obbligatorio'
+      if (!form.city.trim())    e.city    = 'Città obbligatoria'
+    }
+    if (payment === 'online') {
+      // placeholder — Stripe verrà integrato qui
+    }
     return e
   }
 
@@ -29,127 +52,284 @@ export default function CheckoutModal({ open, items, total, onClose, onComplete 
     if (errors[e.target.name]) setErrors(p => ({ ...p, [e.target.name]: '' }))
   }
 
-  const buildMsg = () => {
-    const lines = [
-      '🥙 *ORDINE — WHITE CITY KEBAB*',
-      '',
-      `👤 *Nome:* ${form.name}`,
-      `📞 *Tel:* ${form.phone}`,
-      form.time ? `🕐 *Ritiro:* ${form.time}` : '',
-      '',
-      '*Articoli:*',
-      ...items.map(i => `• ${i.name} ×${i.qty}  –  €${(i.price * i.qty).toFixed(2)}`),
-      '',
-      `💰 *Totale: €${total.toFixed(2)}*`,
-      form.notes ? `\n📝 *Note:* ${form.notes}` : '',
-    ].filter(l => l !== undefined && l !== null)
-    return encodeURIComponent(lines.join('\n'))
-  }
-
-  const handleSubmit = (e) => {
+  const handleConfirm = (e) => {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
-    setBusy(true)
-    window.open(`https://wa.me/${WA_NUMBER}?text=${buildMsg()}`, '_blank', 'noopener,noreferrer')
-    setTimeout(() => { setBusy(false); setForm({ name:'', phone:'', time:'', notes:'' }); setErrors({}); onComplete() }, 900)
+    const id = generateOrderId()
+    setOrderId(id)
+    setStep(3)
+    // TODO: submit order to backend / Stripe here
+  }
+
+  const handleClose = () => {
+    if (step === 3) onComplete()
+    else onClose()
   }
 
   if (!open) return null
 
   return (
     <>
-      <div className="co-bd" onClick={onClose} aria-hidden="true" />
-      <div className="co-modal" role="dialog" aria-modal="true" aria-label="Completa l'ordine">
+      <div className="co-bd" onClick={handleClose} aria-hidden="true" />
+      <div className="co-modal" role="dialog" aria-modal="true" aria-label="Checkout ordine">
 
-        {/* Header */}
-        <div className="co-head">
-          <div>
-            <h2 className="co-head__title">Completa l'ordine</h2>
-            <p className="co-head__sub">L'ordine verrà inviato su WhatsApp per conferma</p>
-          </div>
-          <button className="co-head__close" onClick={onClose} aria-label="Chiudi">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-
-        {/* Summary */}
-        <div className="co-summary">
-          <div className="co-summary__label">Riepilogo ordine</div>
-          <ul className="co-summary__list">
-            {items.map(i => (
-              <li key={i.id} className="co-summary__row">
-                <span>{i.name} <em>×{i.qty}</em></span>
-                <span>€{(i.price * i.qty).toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="co-summary__total">
-            <span>Totale</span>
-            <span className="co-summary__total-val">€{total.toFixed(2)}</span>
-          </div>
-        </div>
-
-        {/* Form */}
-        <form className="co-form" onSubmit={handleSubmit} noValidate>
-          <div className="co-form__row">
-            <div className="co-field">
-              <label htmlFor="co-name" className="co-field__label">Nome e Cognome *</label>
-              <input
-                ref={firstRef}
-                id="co-name" name="name" type="text"
-                className={`co-field__input ${errors.name ? 'co-field__input--err' : ''}`}
-                value={form.name} onChange={handleChange}
-                placeholder="Mario Rossi" autoComplete="name"
-              />
-              {errors.name && <span className="co-field__err">{errors.name}</span>}
+        {/* ——— STEP 3: SUCCESS ——— */}
+        {step === 3 && (
+          <div className="co-success">
+            <div className="co-success__icon">✅</div>
+            <h2 className="co-success__title">Ordine confermato!</h2>
+            <div className="co-success__id">Ordine #{orderId}</div>
+            <div className="co-success__details">
+              <div className="co-success__row">
+                <span>{mode === 'asporto' ? '🏃 Asporto' : '🛵 Consegna'}</span>
+                <span>{mode === 'asporto' ? 'Ritiro in negozio' : form.address + ', ' + form.city}</span>
+              </div>
+              <div className="co-success__row">
+                <span>{payment === 'online' ? '💳 Pagamento online' : mode === 'asporto' ? '💵 Pagamento in negozio' : '💵 Pagamento al rider'}</span>
+                <span>€{orderTotal.toFixed(2)}</span>
+              </div>
+              <div className="co-success__row">
+                <span>⏱ Tempo stimato</span>
+                <span>{mode === 'asporto' ? '20–30 min' : '35–50 min'}</span>
+              </div>
             </div>
+            <p className="co-success__note">
+              Riceverai una conferma all'indirizzo fornito. Puoi contattarci per qualsiasi aggiornamento.
+            </p>
+            <button className="co-success__btn" onClick={handleClose}>
+              Torna al menù
+            </button>
+          </div>
+        )}
 
-            <div className="co-field">
-              <label htmlFor="co-phone" className="co-field__label">Telefono *</label>
-              <input
-                id="co-phone" name="phone" type="tel"
-                className={`co-field__input ${errors.phone ? 'co-field__input--err' : ''}`}
-                value={form.phone} onChange={handleChange}
-                placeholder="+39 320 000 0000" autoComplete="tel"
-              />
-              {errors.phone && <span className="co-field__err">{errors.phone}</span>}
+        {/* ——— STEP 1 + 2 ——— */}
+        {step < 3 && (<>
+          {/* Header */}
+          <div className="co-head">
+            <div className="co-head__left">
+              {step === 2 && (
+                <button className="co-head__back" onClick={() => setStep(1)} aria-label="Indietro">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+              )}
+              <div>
+                <h2 className="co-head__title">
+                  {step === 1 ? 'Opzioni ordine' : 'Le tue informazioni'}
+                </h2>
+                <div className="co-steps">
+                  <span className={`co-step ${step >= 1 ? 'co-step--done' : ''}`}>1</span>
+                  <span className="co-steps__line" />
+                  <span className={`co-step ${step >= 2 ? 'co-step--done' : ''}`}>2</span>
+                  <span className="co-steps__line" />
+                  <span className="co-step">3</span>
+                </div>
+              </div>
+            </div>
+            <button className="co-head__close" onClick={onClose} aria-label="Chiudi">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          {/* Order summary strip */}
+          <div className="co-strip">
+            <span className="co-strip__items">{items.reduce((s,i)=>s+i.qty,0)} articoli</span>
+            <div className="co-strip__prices">
+              {mode === 'consegna' && (
+                <span className="co-strip__sub">+ €{DELIVERY_FEE.toFixed(2)} consegna</span>
+              )}
+              <span className="co-strip__total">€{orderTotal.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="co-field">
-            <label htmlFor="co-time" className="co-field__label">Orario ritiro preferito (opzionale)</label>
-            <input
-              id="co-time" name="time" type="time"
-              className="co-field__input" value={form.time} onChange={handleChange}
-            />
-          </div>
+          {/* ——— STEP 1 ——— */}
+          {step === 1 && (
+            <div className="co-body">
+              {/* Delivery mode */}
+              <div className="co-section">
+                <div className="co-section__label">Come vuoi ricevere l'ordine?</div>
+                <div className="co-toggle-group">
+                  <button
+                    className={`co-toggle ${mode === 'asporto' ? 'co-toggle--active' : ''}`}
+                    onClick={() => setMode('asporto')}
+                    type="button"
+                  >
+                    <span className="co-toggle__icon">🏃</span>
+                    <div>
+                      <div className="co-toggle__title">Asporto</div>
+                      <div className="co-toggle__sub">Ritiri in negozio · Via Ferrara, 4</div>
+                    </div>
+                    {mode === 'asporto' && <span className="co-toggle__check">✓</span>}
+                  </button>
+                  <button
+                    className={`co-toggle ${mode === 'consegna' ? 'co-toggle--active' : ''}`}
+                    onClick={() => setMode('consegna')}
+                    type="button"
+                  >
+                    <span className="co-toggle__icon">🛵</span>
+                    <div>
+                      <div className="co-toggle__title">Consegna a domicilio</div>
+                      <div className="co-toggle__sub">+€{DELIVERY_FEE.toFixed(2)} · 35–50 min</div>
+                    </div>
+                    {mode === 'consegna' && <span className="co-toggle__check">✓</span>}
+                  </button>
+                </div>
+              </div>
 
-          <div className="co-field">
-            <label htmlFor="co-notes" className="co-field__label">Note (opzionale)</label>
-            <textarea
-              id="co-notes" name="notes" rows={3}
-              className="co-field__input co-field__input--ta"
-              value={form.notes} onChange={handleChange}
-              placeholder="Senza cipolla, extra salsa, ecc..."
-            />
-          </div>
+              {/* Payment method */}
+              <div className="co-section">
+                <div className="co-section__label">Come vuoi pagare?</div>
+                <div className="co-toggle-group">
+                  <button
+                    className={`co-toggle co-toggle--disabled`}
+                    onClick={() => {}}
+                    type="button"
+                    aria-disabled="true"
+                    title="Presto disponibile"
+                  >
+                    <span className="co-toggle__icon">💳</span>
+                    <div>
+                      <div className="co-toggle__title">
+                        Pagamento online
+                        <span className="co-toggle__coming">Presto disponibile</span>
+                      </div>
+                      <div className="co-toggle__sub">Carta di credito · Stripe</div>
+                    </div>
+                  </button>
+                  <button
+                    className={`co-toggle ${payment === 'contanti' ? 'co-toggle--active' : ''}`}
+                    onClick={() => setPayment('contanti')}
+                    type="button"
+                  >
+                    <span className="co-toggle__icon">💵</span>
+                    <div>
+                      <div className="co-toggle__title">
+                        {mode === 'asporto' ? 'Pagamento in negozio' : 'Pagamento al rider'}
+                      </div>
+                      <div className="co-toggle__sub">
+                        {mode === 'asporto' ? 'Contanti o POS al ritiro' : 'Contanti o POS alla consegna'}
+                      </div>
+                    </div>
+                    {payment === 'contanti' && <span className="co-toggle__check">✓</span>}
+                  </button>
+                </div>
+              </div>
 
-          <div className="co-wa-note">
-            <span>💬</span>
-            <p>Verrai reindirizzato su <strong>WhatsApp</strong>. Il nostro staff confermerà l'ordine e i tempi di ritiro.</p>
-          </div>
+              <button className="co-next" onClick={() => setStep(2)}>
+                Continua
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
+          )}
 
-          <button type="submit" className="co-submit" disabled={busy}>
-            {busy
-              ? <><div className="co-spinner" /> Invio...</>
-              : <>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Invia ordine su WhatsApp
-                </>
-            }
-          </button>
-        </form>
+          {/* ——— STEP 2 ——— */}
+          {step === 2 && (
+            <form className="co-body co-form" onSubmit={handleConfirm} noValidate>
+
+              <div className="co-section">
+                <div className="co-section__label">I tuoi dati</div>
+                <div className="co-fields">
+                  <div className="co-field">
+                    <label htmlFor="co-name" className="co-field__label">Nome e Cognome *</label>
+                    <input
+                      ref={firstRef} id="co-name" name="name" type="text"
+                      className={`co-field__input ${errors.name ? 'co-field__input--err' : ''}`}
+                      value={form.name} onChange={handleChange}
+                      placeholder="Mario Rossi" autoComplete="name"
+                    />
+                    {errors.name && <span className="co-field__err">{errors.name}</span>}
+                  </div>
+
+                  <div className="co-field">
+                    <label htmlFor="co-phone" className="co-field__label">Telefono *</label>
+                    <input
+                      id="co-phone" name="phone" type="tel"
+                      className={`co-field__input ${errors.phone ? 'co-field__input--err' : ''}`}
+                      value={form.phone} onChange={handleChange}
+                      placeholder="+39 320 000 0000" autoComplete="tel"
+                    />
+                    {errors.phone && <span className="co-field__err">{errors.phone}</span>}
+                  </div>
+
+                  <div className="co-field co-field--full">
+                    <label htmlFor="co-email" className="co-field__label">Email (opzionale)</label>
+                    <input
+                      id="co-email" name="email" type="email"
+                      className="co-field__input"
+                      value={form.email} onChange={handleChange}
+                      placeholder="mario@esempio.it" autoComplete="email"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {mode === 'consegna' && (
+                <div className="co-section">
+                  <div className="co-section__label">Indirizzo di consegna</div>
+                  <div className="co-fields">
+                    <div className="co-field co-field--full">
+                      <label htmlFor="co-address" className="co-field__label">Via e numero civico *</label>
+                      <input
+                        id="co-address" name="address" type="text"
+                        className={`co-field__input ${errors.address ? 'co-field__input--err' : ''}`}
+                        value={form.address} onChange={handleChange}
+                        placeholder="Via Roma, 12" autoComplete="street-address"
+                      />
+                      {errors.address && <span className="co-field__err">{errors.address}</span>}
+                    </div>
+                    <div className="co-field">
+                      <label htmlFor="co-city" className="co-field__label">Città *</label>
+                      <input
+                        id="co-city" name="city" type="text"
+                        className={`co-field__input ${errors.city ? 'co-field__input--err' : ''}`}
+                        value={form.city} onChange={handleChange}
+                        placeholder="Ostuni" autoComplete="address-level2"
+                      />
+                      {errors.city && <span className="co-field__err">{errors.city}</span>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="co-section">
+                <div className="co-section__label">Note aggiuntive</div>
+                <textarea
+                  name="notes" id="co-notes" rows={2}
+                  className="co-field__input co-field__input--ta"
+                  value={form.notes} onChange={handleChange}
+                  placeholder="Senza cipolla, citofono rotto, ecc..."
+                />
+              </div>
+
+              {/* Order recap */}
+              <div className="co-recap">
+                <div className="co-recap__row">
+                  <span>Subtotale</span><span>€{total.toFixed(2)}</span>
+                </div>
+                {mode === 'consegna' && (
+                  <div className="co-recap__row">
+                    <span>Consegna</span><span>€{DELIVERY_FEE.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="co-recap__row co-recap__row--total">
+                  <span>Totale</span><span>€{orderTotal.toFixed(2)}</span>
+                </div>
+                <div className="co-recap__payment">
+                  {payment === 'online'
+                    ? '💳 Pagamento online con carta'
+                    : mode === 'asporto'
+                      ? '💵 Pagamento in negozio al ritiro'
+                      : '💵 Pagamento al rider alla consegna'
+                  }
+                </div>
+              </div>
+
+              <button type="submit" className="co-confirm">
+                Conferma ordine · €{orderTotal.toFixed(2)}
+              </button>
+            </form>
+          )}
+        </>)}
       </div>
     </>
   )

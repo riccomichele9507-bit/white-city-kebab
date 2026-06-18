@@ -43,7 +43,7 @@ export default function SiteFooter() {
               </a>
             </li>
             <li><a href="tel:+39XXXXXXXXXX">📞 Telefono</a></li>
-            <li><a href="https://wa.me/393200000000" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a></li>
+            <li><a href="mailto:info@whitecitykebab.it">✉️ Email</a></li>
           </ul>
         </div>
 

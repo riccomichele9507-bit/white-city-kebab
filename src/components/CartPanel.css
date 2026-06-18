@@ -126,8 +126,17 @@
   display: flex; flex-direction: column; gap: 14px;
   background: var(--bg-card); flex-shrink: 0;
 }
+/* Delivery modes */
+.cp-foot__modes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.cp-foot__mode {
+  font-size: 0.72rem; font-weight: 700; color: var(--text-2);
+  background: var(--bg-section); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 10px; text-align: center;
+}
 .cp-foot__note {
-  font-size: 0.72rem; color: var(--text-3); text-align: center; font-weight: 600;
+  font-size: 0.7rem; color: var(--text-3); text-align: center; font-weight: 600;
 }
 .cp-foot__total {
   display: flex; align-items: center; justify-content: space-between;

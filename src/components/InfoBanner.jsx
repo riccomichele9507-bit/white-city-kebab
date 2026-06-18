@@ -7,7 +7,7 @@ export default function InfoBanner() {
         <div className="info-banner__promo">
           <span className="info-banner__promo-badge">🎉 NOVITÀ</span>
           <p className="info-banner__promo-text">
-            Ordina online e <strong>ritira in negozio</strong> senza aspettare in coda — il tuo ordine viene preparato appena arriva!
+            Ordina online, scegli <strong>asporto o consegna</strong> e paga come preferisci — online o alla consegna.
           </p>
           <a href="#menu-full" className="info-banner__promo-btn">Vai al menù</a>
         </div>
@@ -35,10 +35,10 @@ export default function InfoBanner() {
             </div>
           </div>
           <div className="info-banner__feat">
-            <span className="info-banner__feat-icon">💬</span>
+            <span className="info-banner__feat-icon">💳</span>
             <div>
-              <div className="info-banner__feat-title">WhatsApp</div>
-              <div className="info-banner__feat-sub">Ordina via messaggio</div>
+              <div className="info-banner__feat-title">Pagamento</div>
+              <div className="info-banner__feat-sub">Online o alla consegna</div>
             </div>
           </div>
         </div>

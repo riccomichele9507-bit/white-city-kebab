@@ -74,13 +74,18 @@ export default function CartPanel({ open, items, total, onClose, onUpdate, onRem
         {/* Footer */}
         {items.length > 0 && (
           <div className="cp-foot">
-            <div className="cp-foot__note">🕐 Pronto in 20–30 min · Solo asporto</div>
+            {/* Delivery/pickup chips */}
+            <div className="cp-foot__modes">
+              <div className="cp-foot__mode">🏃 Asporto · Via Ferrara, 4</div>
+              <div className="cp-foot__mode">🛵 Consegna a domicilio</div>
+            </div>
+            <div className="cp-foot__note">Scegli modalità e pagamento al checkout</div>
             <div className="cp-foot__total">
-              <span>Totale ordine</span>
+              <span>Subtotale</span>
               <span className="cp-foot__total-val">€{total.toFixed(2)}</span>
             </div>
             <button className="cp-foot__checkout" onClick={onCheckout}>
-              Procedi all'ordine
+              Vai al checkout
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
           </div>
