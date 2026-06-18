@@ -1,0 +1,228 @@
+.menu-section {
+  padding: 64px 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.menu-section--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.menu-section__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ——— SECTION HEADER ——— */
+.menu-section__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.menu-section__header-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.menu-section__emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.menu-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--white);
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.menu-section__subtitle {
+  font-size: 0.82rem;
+  color: var(--text-3);
+  font-style: italic;
+  max-width: 400px;
+}
+
+.menu-section__age-warning {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--red);
+  background: var(--red-glow);
+  border: 1px solid rgba(192, 57, 43, 0.3);
+  padding: 6px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ——— CARD GRID ——— */
+.menu-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+@media (min-width: 900px) {
+  .menu-section__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .menu-section__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ——— DRINKS GRID ——— */
+.menu-section__drinks-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--bg-2);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+/* ——— DRINK ROW ——— */
+.drink-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--bg-card);
+  transition: background var(--transition);
+}
+
+.drink-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.drink-row__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.drink-row__name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drink-row__desc {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.drink-row__tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.drink-row__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.drink-row__price {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+.drink-row__btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text-1);
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+  border: 1px solid var(--border);
+  line-height: 1;
+}
+
+.drink-row__btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+.drink-row__btn--in-cart {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: var(--border-strong);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+@media (max-width: 480px) {
+  .menu-section {
+    padding: 44px 0;
+  }
+
+  .menu-section__inner {
+    padding: 0 16px;
+  }
+
+  .menu-section__header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .menu-section__emoji {
+    font-size: 2rem;
+  }
+
+  .menu-section__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .menu-section__grid {
+    grid-template-columns: 1fr;
+  }
+}
